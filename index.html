@@ -189,7 +189,14 @@
   figure.shot.phone img { max-width: 300px; border-radius: 16px; }
   @media print {
     figure.shot.phone img { width: 30%; }
-    figure.message-flow svg { width: 50%; }
+    figure.message-flow svg { width: 72%; }
+    figure.message-flow { margin: 6px 0 7px; }
+    figure.message-flow figcaption { margin-top: 4px; }
+    figure.message-flow + h5.subsub { margin-top: 10px; }
+    .message-flow-page h5.subsub { margin: 10px 0 5px; }
+    .message-flow-page ul { margin-bottom: 6px; }
+    .message-flow-page li { margin-bottom: 2px; }
+    .message-flow-page .note, .message-flow-page .result { padding: 8px 12px; margin: 8px 0 9px; }
   }
   @media print { .cc-grid { display: block; } }
 </style>
@@ -319,8 +326,9 @@
 <h3 class="proj">메시지 전달 구조 — 저장과 실시간 전송 분리</h3>
 <div class="meta">팀 설계 구조 · 본인 담당: STOMP 통신 모듈</div>
 
+<section class="message-flow-page">
 <figure class="tall message-flow">
-<svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK KR, sans-serif">
+<svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK KR, sans-serif">
   <defs><marker id="msg-ar" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 1.5L7.5 5L2 8.5" fill="none" stroke="#73726c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
   <text x="340" y="26" text-anchor="middle" font-size="13" font-weight="500" fill="#3d3d3a">SEND → 저장 → Pub/Sub → MESSAGE</text>
 
@@ -339,7 +347,7 @@
 
   <rect x="470" y="46" width="170" height="82" rx="9" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
   <text x="555" y="68" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489">메시지 처리 모듈</text>
-  <text x="555" y="90" text-anchor="middle" font-size="11.5" fill="#534AB7">시퀀스 발급 · DB 저장</text>
+  <text x="555" y="90" text-anchor="middle" font-size="11.5" fill="#534AB7">DB 저장</text>
   <text x="555" y="111" text-anchor="middle" font-size="11" fill="#534AB7">팀 설계 구조</text>
 
   <line x1="129" y1="87" x2="151" y2="87" stroke="#73726c" stroke-width="1.2" marker-end="url(#msg-ar)"/>
@@ -395,7 +403,8 @@
 
 <div class="note"><strong>트레이드오프와 한계</strong><br>Redis Pub/Sub은 연결이 끊긴 순간의 메시지를 보관하지 않아 실시간 전달 누락을 재연결 조회로 보완했습니다. 프론트가 생성한 UUID는 형식만 검증해 같은 UUID의 재전송은 차단하지 않았습니다.<br><strong>개선 방향(미적용)</strong> · UUID 기준 Redis SETNX(TTL)나 DB 유니크 제약으로 중복 전송을 차단할 수 있습니다.</div>
 
-<div class="result">팀이 설계한 저장·전송 분리 구조에서 STOMP 통신 모듈을 구현해, 저장 완료된 메시지를 여러 파드의 구독자에게 전달하고 재연결 시 누락 구간을 조회하도록 구성했습니다.</div>
+<div class="result">팀이 설계한 저장·전송 분리 구조에서 STOMP 통신 모듈의 구독 처리, SEND 검증·필터링, 여러 파드 구독자에게 MESSAGE 전달을 구현했습니다.</div>
+</section>
 
 <div class="newpage"></div>
 <div class="projnum">PROJECT 02</div>
@@ -445,19 +454,17 @@
 <h4 class="sub">메시지 큐 도입 — 알림 요청과 발송 분리</h4>
 
 <h5 class="subsub">문제와 제약</h5>
-<p>기존 그룹웨어 알림은 큐 없이 처리되어, 대량 알림이 발생하면 DB 부하가 크게 증가한다는 의견을 DBA로부터 공유받았습니다. 부하 수치는 별도로 측정하지 않았습니다.</p>
+<p>기존 그룹웨어 알림은 큐 없이 처리되어, 대량 알림이 발생하면 DB 부하가 크게 증가한다는 의견을 DBA로부터 공유받았습니다.</p>
 
 <h5 class="subsub">판단과 구현</h5>
 <ul>
   <li>알림 요청과 실제 발송을 RabbitMQ로 분리해, 요청 서비스는 큐에 메시지를 넣고 반환하고 몰린 요청은 컨슈머 처리 속도에 맞춰 발송</li>
-  <li>사내에서 이미 운영 중인 RabbitMQ를 사용. Kafka는 신규 운영 부담을 고려한 상위 판단에 따라 도입하지 않음</li>
+  <li>사내에서 이미 운영 중인 RabbitMQ를 사용. Kafka는 신규 운영 부담을 고려해 도입하지 않음</li>
   <li>일시적 오류는 컨슈머 안에서 <strong>지수 백오프로 최대 3회 재시도</strong>하고, 이후에도 실패한 건은 DLQ로 전달</li>
   <li>500건 배치 중 일부만 실패하면 배치 전체를 ack하고 <strong>실패 건만 DLQ로 보내</strong> 성공 건의 재발송을 방지</li>
 </ul>
 
 <div class="note"><strong>트레이드오프</strong><br>요청 서비스의 응답과 발송 부하는 분리되지만, 알림 도착은 큐 대기만큼 늦어질 수 있습니다. 또한 컨슈머 안에서 기다렸다가 재시도하므로, 대기 중에는 해당 컨슈머가 다음 배치를 처리하지 못합니다.</div>
-
-<div class="result">알림 요청과 발송을 RabbitMQ로 분리하고, 일시적 오류는 최대 3회 재시도한 뒤 실패 건만 DLQ로 보내도록 구현했습니다.</div>
 
 <h4 class="sub">확장을 전제한 구조 설계</h4>
 <ul>
@@ -633,7 +640,7 @@ k6는 랜딩·약관 페이지 URL의 응답을 측정했습니다. 이 결과�
 </div>
 <div class="skillblock">
   <div class="skilllabel">Architecture / 성능</div>
-  <ul><li>포트 앤 어댑터 패턴 기반 멀티 모듈 구조 설계</li><li>외부 시스템 연동 및 API 스펙 설계</li><li>k6 기반 부하 테스트, 정적 자산 사전 압축(gzip) 및 Apache 서빙 설정</li></ul>
+  <ul><li>포트 앤 어댑터 패턴 기반 멀티 모듈 구조 설계</li><li>k6 기반 부하 테스트, 정적 자산 사전 압축(gzip) 및 Apache 서빙 설정</li></ul>
 </div>
 <div class="skillblock">
   <div class="skilllabel">Tooling</div>
