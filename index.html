@@ -202,6 +202,39 @@
     .message-flow-page .note, .message-flow-page .result { padding: 8px 12px; margin: 8px 0 9px; }
   }
   @media print { .cc-grid { display: block; } }
+
+  /* 방문 단위 재측정: 표·차트 인쇄 묶음과 모바일 폭 */
+  .gzip-evidence { font-size: 13px; color: var(--ink-5); }
+  .gzip-table { table-layout: fixed; }
+  .gzip-table th:first-child { width: 16%; }
+  .gzip-table th, .gzip-table td { padding: 11px 9px; }
+  .gzip-table tbody th { background: transparent; }
+  .gzip-headers code { overflow-wrap: anywhere; }
+  @media screen and (max-width: 720px) {
+    .sheet { min-width: 0; }
+    .sheet > * { min-width: 0; }
+    .gzip-table { font-size: 12px; }
+    .gzip-table th { font-size: 11px; }
+    .gzip-table th, .gzip-table td { padding: 8px 5px; word-break: keep-all; }
+    .gzip-table td:last-child { overflow-wrap: anywhere; }
+    figure:not(.shot) { max-width: 100%; }
+    figure.gzip-chart { overflow: visible; text-align: center; }
+    figure.gzip-chart svg { width: 100%; max-width: 680px; }
+    figure.gzip-chart::after { display: none; }
+    .gzip-headers code { display: inline; font-size: 12px; }
+    .gzip-note { padding: 14px 16px; }
+  }
+  @media print {
+    .competency-print-group { break-inside: avoid; page-break-inside: avoid; }
+    .gzip-setup-block, .gzip-chart-block, .gzip-mail-block { break-inside: avoid; page-break-inside: avoid; }
+    .gzip-table { margin: 8px 0; }
+    .gzip-table th, .gzip-table td { padding: 5px 8px; }
+    .gzip-chart svg { width: 72%; }
+    .gzip-chart figcaption { margin-top: 5px; }
+    .gzip-evidence { font-size: 9pt; margin-bottom: 6px; }
+    .gzip-note { font-size: 9.5pt; line-height: 1.55; }
+  }
+
 </style>
 </head>
 <body>
@@ -214,8 +247,9 @@
 
 <h2 class="sec">Introduce</h2>
 <p>Java·Spring Boot 기반으로 <strong>금전성 데이터의 정합성과 동시성 문제</strong>를 다뤄 온 3년차 백엔드 개발자입니다. 프로모션 수량 제어와 1인당 구매 제한의 동시성 처리를 맡았고, 실시간 메시징과 대량 알림 시스템 구축에 참여했습니다.</p>
-<p>여러 요청이 동시에 같은 데이터를 바꿀 때 생기는 문제를 찾아, 업무 제약에 맞는 제어 방식을 선택합니다. 읽음 상태 저장 구조를 개선하고, 복지몰 정적 자산을 68.5% 줄인 뒤 부하 테스트로 <strong>확인한 범위와 남은 한계</strong>를 구분해 기록했습니다.</p>
+<p>여러 요청이 동시에 같은 데이터를 바꿀 때 생기는 문제를 찾아, 업무 제약에 맞는 제어 방식을 선택합니다. 읽음 상태 저장 구조를 개선하고, 복지몰 정적 자산을 68.5% 줄이고, 방문 단위 사후 재측정으로 압축 적용 시 수용량이 약 3배임을 확인했습니다.</p>
 
+<section class="competency-print-group">
 <h2 class="sec">Core Competencies</h2>
 <p class="cc-intro">직접 다룬 문제와 판단 근거를 프로젝트별로 정리했습니다. 아래 프로젝트 번호는 직무 연관성 순서입니다.</p>
 <div class="cc-grid">
@@ -223,13 +257,14 @@
 <div class="cc"><div class="cc-t">사용자 단위 동시성 제어</div><div class="cc-d">1인당 구매 제한에서 같은 사용자의 동시 요청이 모두 통과할 수 있는 구간을 (프로모션, 사용자) 단위 Redis 분산락으로 보호했습니다.</div><div class="cc-p"><span class="cc-tag">PROJECT 01</span>쿠팝비즈 — 1인당 제한 분산락</div></div>
 <div class="cc"><div class="cc-t">읽음 데이터 구조 개선</div><div class="cc-d">10명·메시지 1,000건을 가정하면 읽음 상태 저장 행 수가 1만 행에서 10행으로 줄어드는 구조입니다.</div><div class="cc-p"><span class="cc-tag">PROJECT 02</span>차세대 메신저 — 읽음 구조 재설계</div></div>
 <div class="cc"><div class="cc-t">외부 API 제약에 맞춘 처리</div><div class="cc-d">FCM SDK의 최대 500건 입력 한도에 큐 소비 단위를 맞추고, 발송 대상별 실패 결과를 분리했습니다.</div><div class="cc-p"><span class="cc-tag">PROJECT 03</span>통합 알림 서버 — RabbitMQ Batch · FCM</div></div>
-<div class="cc"><div class="cc-t">측정 범위를 밝히는 성능 검증</div><div class="cc-d">정적 자산을 68.5% 줄이고, 초기 접속 테스트에서 랜딩·약관 페이지 URL 요청 61,867건을 실패 없이 처리했습니다.</div><div class="cc-p"><span class="cc-tag">PROJECT 04</span>복지몰 — 사전 압축 · k6 부하 테스트</div></div>
+<div class="cc"><div class="cc-t">방문 단위 성능 검증</div><div class="cc-d">정적 자산을 68.5% 줄이고, 신규 방문 기준 gzip ON/OFF 재측정에서 안정 수용량 약 3배(6명/초 vs 2명/초)를 확인했습니다.</div><div class="cc-p"><span class="cc-tag">PROJECT 04</span>복지몰 — 사전 압축 · k6 부하 테스트</div></div>
 <div class="cc"><div class="cc-t">개발 프로세스 개선</div><div class="cc-d">공식 가이드가 제공되지 않는 보안 점검 도구를 직접 분석해, 팀이 반복 사용할 수 있는 형태로 정리했습니다.</div><div class="cc-p"><span class="cc-tag">WORKFLOW</span>SAST 점검 자동화 · 쿼리 실행 계획 점검 · AI 코드 리뷰</div></div>
 </div>
 
 <h2 class="sec">주요 프로젝트</h2>
 <p style="font-size:13pt;font-weight:700;color:#191F28;margin-bottom:2px;">다우기술</p>
 <p style="font-size:11pt;color:#8B95A1;">2023.07 – 현재</p>
+</section>
 
 <div class="newpage"></div>
 <div class="projnum">PROJECT 01</div>
@@ -564,7 +599,7 @@
   <tr><td>회원가입 페이지 로드</td><td>약 9 MB</td><td>약 3 MB</td><td><strong>약 67%</strong></td></tr>
 </table>
 
-<div class="result">빌드 산출물은 20.27MB에서 6.38MB로 줄었습니다. 사전 압축 적용 상태의 부하 테스트에서 CPU 사용률은 1.5%에서 최대 6%로 측정됐으며, 실시간 압축 방식과의 비교 실험은 수행하지 않았습니다.</div>
+<div class="result">빌드 산출물은 20.27MB에서 6.38MB로 줄었고, 사후 재측정에서 요청당 수신량은 161KiB와 496KiB로 약 68% 차이가 났습니다.</div>
 
 <h4 class="sub">초대 메일 발송 처리 개선</h4>
 <figure><svg viewBox="0 0 680 290" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK KR, sans-serif"><defs><marker id="ar" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 1.5L7.5 5L2 8.5" fill="none" stroke="#73726c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><rect x="40" y="50" width="120" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/><text x="100.0" y="69.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#444441">초대 요청</text><text x="100.0" y="88.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">최대 10,000명</text><line x1="164" y1="78" x2="192" y2="78" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><rect x="196" y="50" width="120" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.7"/><text x="256.0" y="69.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#3C3489">chunk 분할</text><text x="256.0" y="88.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#534AB7">500건 단위</text><line x1="320" y1="78" x2="348" y2="78" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><rect x="352" y="50" width="120" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.7"/><text x="412.0" y="69.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#3C3489">비동기 발송</text><text x="412.0" y="88.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#534AB7">스레드 풀 5</text><line x1="476" y1="78" x2="504" y2="78" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><rect x="508" y="50" width="120" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/><text x="568.0" y="69.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#444441">메일 서버</text><text x="568.0" y="88.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">SMTP 전달</text><path d="M568 106 V140 H140 V166" fill="none" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><text x="352" y="130" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="400" fill="#73726c">발송 실패 건</text><rect x="60" y="170" width="160" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.7"/><text x="140.0" y="189.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#712B13">실패 건 수집</text><text x="140.0" y="208.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993C1D">대상자 목록</text><line x1="224" y1="198" x2="256" y2="198" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><rect x="260" y="170" width="160" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.7"/><text x="340.0" y="198.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#444441">엑셀 파일 생성</text><line x1="424" y1="198" x2="456" y2="198" stroke="#73726c" stroke-width="1.2" marker-end="url(#ar)"/><rect x="460" y="170" width="160" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.7"/><text x="540.0" y="189.0" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#085041">마스터 사용자</text><text x="540.0" y="208.0" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0F6E56">결과 메일 전송</text></svg></figure>
@@ -589,30 +624,33 @@
 
 <div class="newpage"></div>
 <div class="projnum">PROJECT 04</div>
-<h3 class="proj">k6 부하 테스트로 사전 검증</h3>
-<div class="meta">오픈 전 두 갈래로 나눠 검증</div>
+<h3 class="proj">k6 부하 테스트 — 오픈 전 검증과 사후 재측정</h3>
+<div class="meta">2026.08 오픈 · 2026-10-07 스테이징 사후 측정 (Apache + Vue SPA)</div>
 
-<h4 class="sub">시나리오 1 — 초기 접속 URL 요청</h4>
-<p>QR 인증 후 모바일 랜딩과 회원가입 약관 동의 페이지 URL을 대상으로 측정했습니다. 가상 유저를 30초 동안 700명까지 늘리고, 1분간 유지한 뒤 30초 동안 줄이는 구성(총 2분)입니다.</p>
+<section class="gzip-measurement">
+<div class="gzip-setup-block">
+<p>오픈 전 테스트는 랜딩·약관 URL 응답만 측정해 실제 화면 로딩을 반영하지 못했습니다.</p>
+<h4 class="sub">사후 재측정 — 신규 방문 기준 gzip ON/OFF</h4>
+<p>복지몰 오픈 이후 스테이징에서 신규 방문 1회를 <strong>메인 HTML 1개 + 정적 리소스 19개 병렬 다운로드</strong>로 구성했습니다. 캐시 없이 초당 유입을 고정하는 <strong>open model</strong>로 단계마다 120초 유지했습니다.</p>
+<p class="gzip-headers">ON은 <code>Accept-Encoding: gzip, deflate, br</code>, OFF는 <code>Accept-Encoding: identity</code>로 압축하지 않은 원본을 요청했습니다.</p>
+<table class="gzip-table" aria-label="신규 방문 gzip ON/OFF 120초 측정 결과">
+<thead><tr><th scope="col">유입<br>(명/초)</th><th scope="col">ON p95</th><th scope="col">ON 판정</th><th scope="col">OFF p95</th><th scope="col">OFF 판정</th></tr></thead>
+<tbody>
+<tr><th scope="row">2</th><td>-</td><td>-</td><td>2.76초</td><td>기준 근접</td></tr>
+<tr><th scope="row">3</th><td>-</td><td>-</td><td>6.73초</td><td>기준 초과</td></tr>
+<tr><th scope="row">4</th><td><strong>0.52초</strong></td><td>통과</td><td><strong>9.07초</strong></td><td>자동 중단</td></tr>
+<tr><th scope="row">6</th><td><strong>1.96초</strong></td><td>통과</td><td>-</td><td>-</td></tr>
+<tr><th scope="row">8</th><td>2.74초</td><td>기준 근접</td><td>-</td><td>-</td></tr>
+</tbody></table>
+<p class="gzip-evidence">-: 측정 안 함. ON 실패 0건. 페이지 로드는 HTML·정적 리소스 다운로드 완료 기준입니다.</p>
+</div>
+<div class="gzip-chart-block">
+<figure class="gzip-chart"><svg viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="gzip-chart-title gzip-chart-desc" font-family="Pretendard Variable, Pretendard, sans-serif"><title id="gzip-chart-title">초당 신규 접속자에 따른 페이지 로드 p95</title><desc id="gzip-chart-desc">gzip ON은 4명/초 0.52초, 6명/초 1.96초, 8명/초 2.74초. OFF는 2명/초 2.76초, 3명/초 6.73초, 4명/초 9.07초에서 자동 중단. 기준은 3초.</desc><line x1="72" x2="602" y1="252.0" y2="252.0" stroke="#E5E8EB"/><text x="60" y="256.0" text-anchor="end" font-size="13" fill="#6B7684">0</text><line x1="72" x2="602" y1="189.6" y2="189.6" stroke="#8B95A1" stroke-dasharray="5 4"/><text x="60" y="193.6" text-anchor="end" font-size="13" fill="#6B7684">3</text><line x1="72" x2="602" y1="127.2" y2="127.2" stroke="#E5E8EB"/><text x="60" y="131.2" text-anchor="end" font-size="13" fill="#6B7684">6</text><line x1="72" x2="602" y1="64.8" y2="64.8" stroke="#E5E8EB"/><text x="60" y="68.8" text-anchor="end" font-size="13" fill="#6B7684">9</text><line x1="72" x2="72" y1="44" y2="252" stroke="#B0B8C1"/><line x1="72" x2="602" y1="252" y2="252" stroke="#B0B8C1"/><text x="520" y="181.6" text-anchor="end" font-size="13" fill="#6B7684">기준 3초</text><text x="72.0" y="274" text-anchor="middle" font-size="13" fill="#6B7684">2</text><text x="160.3" y="274" text-anchor="middle" font-size="13" fill="#6B7684">3</text><text x="248.7" y="274" text-anchor="middle" font-size="13" fill="#6B7684">4</text><text x="425.3" y="274" text-anchor="middle" font-size="13" fill="#6B7684">6</text><text x="602.0" y="274" text-anchor="middle" font-size="13" fill="#6B7684">8</text><text x="337" y="303" text-anchor="middle" font-size="14" fill="#4E5968">초당 신규 접속자 (명/초)</text><text transform="translate(20 150) rotate(-90)" text-anchor="middle" font-size="14" fill="#4E5968">페이지 로드 p95 (초)</text><line x1="80" x2="104" y1="20" y2="20" stroke="#3182F6" stroke-width="2.4"/><text x="112" y="25" font-size="14" fill="#3182F6">gzip ON</text><line x1="222" x2="246" y1="20" y2="20" stroke="#993C1D" stroke-width="2.4"/><text x="254" y="25" font-size="14" fill="#993C1D">gzip OFF</text><polyline points="248.7,241.2 425.3,211.2 602.0,195.0" fill="none" stroke="#3182F6" stroke-width="2.4"/><circle cx="248.7" cy="241.2" r="4" fill="#3182F6"/><text x="248.7" y="229.2" text-anchor="middle" font-size="13" fill="#3182F6">0.52</text><circle cx="425.3" cy="211.2" r="4" fill="#3182F6"/><text x="425.3" y="199.2" text-anchor="middle" font-size="13" fill="#3182F6">1.96</text><circle cx="602.0" cy="195.0" r="4" fill="#3182F6"/><text x="602.0" y="183.0" text-anchor="middle" font-size="13" fill="#3182F6">2.74</text><polyline points="72.0,194.6 160.3,112.0 248.7,63.3" fill="none" stroke="#993C1D" stroke-width="2.4"/><circle cx="72.0" cy="194.6" r="4" fill="#993C1D"/><text x="84.0" y="185.6" text-anchor="start" font-size="13" fill="#993C1D">2.76</text><circle cx="160.3" cy="112.0" r="4" fill="#993C1D"/><text x="172.3" y="103.0" text-anchor="start" font-size="13" fill="#993C1D">6.73</text><circle cx="248.7" cy="63.3" r="4" fill="#993C1D"/><text x="260.7" y="68.3" text-anchor="start" font-size="13" fill="#993C1D">9.07 · 중단</text></svg><figcaption>이번 120초 측정 결과 · ON 6명/초(분당 360명), OFF 약 2명/초(분당 120명)로 안정 수용량 약 3배</figcaption></figure>
+<div class="note gzip-note">120초 측정 2회 중 1회는 6명/초에서 기준 경계(3.05초)여서, 보수적으로 6명/초를 안정 수용량으로 판단했습니다. OFF는 압축하지 않은 원본 전송 조건이며 실시간 압축과의 비교는 아닙니다.<br>이전 측정은 일부 정적 경로가 HTML 대체 응답이어서 이번 측정과 완전히 같은 조건은 아니며, 결과 편차의 원인은 확인하지 못했습니다. 스테이징·단일 부하 PC·캐시 없는 신규 방문 기준입니다.</div>
+</div>
+</section>
 
-<table>
-  <tr><th>지표</th><th>결과</th></tr>
-  <tr><td>총 처리 요청</td><td><strong>61,867건</strong></td></tr>
-  <tr><td>처리율</td><td><strong>513.6 req/s</strong></td></tr>
-  <tr><td>실패</td><td><strong>0건</strong> (checks 100% 성공)</td></tr>
-  <tr><td>응답 시간</td><td>avg 21.6ms · median 15.5ms</td></tr>
-  <tr><td>p90 / p95</td><td>38.8ms / <strong>49.4ms</strong></td></tr>
-  <tr><td>최대</td><td>471ms</td></tr>
-  <tr><td>CPU 사용률</td><td>1.5% → 피크 6% (+4.5%p)</td></tr>
-  <tr><td>메모리 사용률</td><td>15% → 피크 16% (+1%p)</td></tr>
-</table>
-
-<ul>
-  <li>랜딩·약관 페이지 URL 요청의 p95는 <strong>49.4ms</strong>로 설정한 임계값 2,000ms 이내였습니다. 이 수치는 해당 URL의 응답 시간이며, JS/CSS 등을 내려받아 화면이 표시되기까지의 전체 페이지 로딩 시간은 아닙니다.</li>
-  <li>사전 압축 적용 상태에서 CPU는 최대 6%로 측정됐습니다. 실시간 압축을 적용했을 때의 CPU 사용량은 측정하지 않았습니다.</li>
-</ul>
-<p style="font-size:11pt;color:#6B7684;">VU 700은 4,000명이 동일 시점에 몰리는 것이 아니라, 초대 메일 발송 이후 수 분에 걸쳐 유입되는 구조를 전제로 잡은 동시 접속 피크 값입니다.</p>
-
+<div class="gzip-mail-block">
 <h4 class="sub">시나리오 2 — 초대 메일 발송</h4>
 <ul>
   <li>더미 이메일 주소 10,000건을 대상으로 chunk 분할, 비동기 처리와 실패 결과 수집이 연속 실패 상황에서도 중단되지 않는지 검증</li>
@@ -625,12 +663,10 @@
   </li>
 </ul>
 
-<div class="note">
-<strong>측정 범위</strong><br>
-k6는 랜딩·약관 페이지 URL의 응답을 측정했습니다. 이 결과로 JS/CSS 전체 다운로드 시간이나 네트워크 전송 상한을 검증했다고 해석하지 않았습니다.
-</div>
 
-<div class="result">초기 접속 URL 요청과 메일 발송의 연속 실패를 서로 다른 시나리오로 검증한 뒤 배포했습니다.</div>
+
+<div class="result">실제 방문 단위로 다시 측정해 압축 적용 시 안정 수용량이 약 3배임을 확인했고, 초대 메일은 연속 실패 조건에서도 흐름이 끊기지 않음을 별도로 검증했습니다.</div>
+</div>
 
 <div class="newpage"></div>
 <h2 class="sec">개발 워크플로 개선 및 팀 공유</h2>
